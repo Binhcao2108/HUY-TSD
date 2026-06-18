@@ -82,23 +82,50 @@ export default function App() {
             return foundKey ? row[foundKey] : undefined;
           };
 
-          return {
-            id: getVal(['Mã HĐ', 'Hợp đồng']) || `HD_UPLOAD_${idx + 1}`,
-            cancelDate: getVal(['Ngày hủy dịch vụ', 'Ngày tạo', 'Lập ngày']) || new Date().toISOString().split('T')[0],
-            month: getVal(['Tháng']) || 'Tháng Chưa Rõ',
-            region: getVal(['Vùng miền', 'Vung mien']) || 'Chưa Rõ',
-            branch: getVal(['CN Quản lý', 'CN Bán', 'Chi nhánh']) || 'Chưa Rõ',
-            servicePackage: getVal(['Gói dịch vụ', 'Gói']) || 'Chưa Rõ',
-            prepaidAmount: Number(getVal(['Số tiền trả trước', 'Tiền trả trước'])) || 0,
-            causeGroup: getVal(['Nhóm']) || 'Khác',
-            detailedReason: getVal(['Lý do chuyển xử lý NOT OK', 'Lý do']) || 'Không rõ',
-            salesRepId: getVal(['Acc nhân viên bán', 'Acc NV', 'Acc sale', 'Mã NV']) || `Chưa có thông tin Acc`,
-            salesRepName: getVal(['Tên nhân viên bán', 'Tên nhân viên', 'Tên Sale']) || 'Không rõ',
-            salesDept: getVal(['Phòng kinh doanh', 'Phòng KD']) || 'Không rõ',
-            salesChannel: getVal(['Nguồn bán', 'Kênh']) || 'Không rõ',
-            paymentMethod: getVal(['Hình thức thanh toán']) || 'Không rõ',
-            techId: getVal(['ACT_ASSIGNMENT']) || `KTV_${idx + 1}`
-          };
+            let rawMonth = getVal(['Tháng', 'Thang', 'Kỳ tháng', 'Tháng N', 'Tháng nghiệm thu', 'Kỳ cước']);
+            let cancelDate = getVal(['Ngày hủy dịch vụ', 'Ngày tạo', 'Lập ngày', 'Ngày']);
+            
+            let month = 'Tháng Chưa Rõ';
+            if (rawMonth) {
+              month = String(rawMonth);
+            } else if (cancelDate) {
+               // Try to extract month from date (e.g. DD/MM/YYYY or YYYY-MM-DD or excel serial)
+               if (typeof cancelDate === 'number') {
+                 // Excel date serial
+                 const date = new Date((cancelDate - 25569) * 86400 * 1000);
+                 month = `Tháng ${date.getMonth() + 1}`;
+               } else {
+                 const dateStr = String(cancelDate);
+                 // match dd/mm/yyyy
+                 const parts = dateStr.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+                 if (parts) {
+                   month = `Tháng ${parseInt(parts[2], 10)}`;
+                 } else {
+                   const d = new Date(dateStr);
+                   if (!isNaN(d.getTime())) {
+                     month = `Tháng ${d.getMonth() + 1}`;
+                   }
+                 }
+               }
+            }
+
+            return {
+              id: getVal(['Mã HĐ', 'Hợp đồng']) || `HD_UPLOAD_${idx + 1}`,
+              cancelDate: cancelDate || new Date().toISOString().split('T')[0],
+              month: month,
+              region: getVal(['Vùng miền', 'Vung mien', 'Vùng']) || 'Chưa Rõ',
+              branch: getVal(['CN Quản lý', 'CN Bán', 'Chi nhánh', 'CN']) || 'Chưa Rõ',
+              servicePackage: getVal(['Gói dịch vụ', 'Gói']) || 'Chưa Rõ',
+              prepaidAmount: Number(getVal(['Số tiền trả trước', 'Tiền trả trước'])) || 0,
+              causeGroup: getVal(['Nhóm', 'Nhóm nguyên nhân']) || 'Khác',
+              detailedReason: getVal(['Lý do chuyển xử lý NOT OK', 'Lý do', 'Lý do hủy', 'Nguyên nhân']) || 'Không rõ',
+              salesRepId: getVal(['Acc nhân viên bán', 'Acc NV', 'Acc sale', 'Mã NV']) || `Chưa có thông tin Acc`,
+              salesRepName: getVal(['Tên nhân viên bán', 'Tên nhân viên', 'Tên Sale']) || 'Không rõ',
+              salesDept: getVal(['Phòng kinh doanh', 'Phòng KD']) || 'Không rõ',
+              salesChannel: getVal(['Nguồn bán', 'Kênh']) || 'Không rõ',
+              paymentMethod: getVal(['Hình thức thanh toán', 'Hình thức TT']) || 'Không rõ',
+              techId: getVal(['ACT_ASSIGNMENT']) || `KTV_${idx + 1}`
+            };
         });
 
         if (mappedData.length > 0) {
